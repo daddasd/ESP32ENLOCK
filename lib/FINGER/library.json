@@ -1,0 +1,7 @@
+{
+  "name": "FINGER",
+  "description": "Finger驱动库",
+  "keywords": "FINGER",
+  "frameworks": "arduino",
+  "platforms": ["espressif32"]
+}

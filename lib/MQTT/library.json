@@ -1,0 +1,7 @@
+{
+  "name": "MQTT",
+  "description": "MQTT驱动库",
+  "keywords": "MQTT,WIFI",
+  "frameworks": "arduino",
+  "platforms": ["espressif32"]
+}

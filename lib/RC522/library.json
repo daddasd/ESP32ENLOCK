@@ -1,0 +1,7 @@
+{
+  "name": "RC522",
+  "description": "RC522驱动库",
+  "keywords": "RC522,EEPROM",
+  "frameworks": "arduino",
+  "platforms": ["espressif32"]
+}
