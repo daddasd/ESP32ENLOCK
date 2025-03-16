@@ -4,6 +4,7 @@
 #include "PubSubClient.h"
 #include "freertos.h"
 #include "Arduino.h"
+#include "OTA.h"
 
 extern int Unlock;
 

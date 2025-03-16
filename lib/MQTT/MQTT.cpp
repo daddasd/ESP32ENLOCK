@@ -100,9 +100,10 @@ void processData(const char *data)
         Unlock = 1;
         // 在这里添加打开设备的代码，例如 digitalWrite(LED_PIN, HIGH);
     }
-    else if (strcmp(data, "OFF") == 0)
+    else if (strcmp(data, "update") == 0)
     {
-        Serial.println("Action: Turn device OFF");
+        Serial.println("EPS32_OTAING");
+        updateBin();
         // 在这里添加关闭设备的代码，例如 digitalWrite(LED_PIN, LOW);
     }
     else

@@ -1,0 +1,7 @@
+{
+  "name": "OTA",
+  "description": "OTA驱动库",
+  "keywords": "MQTT,OTA,A/Bface,WIFI",
+  "frameworks": "arduino",
+  "platforms": ["espressif32"]
+}

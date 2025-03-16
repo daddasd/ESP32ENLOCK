@@ -1,8 +1,8 @@
 /*
  * @Author: 'lin' '11252700+display23@user.noreply.gitee.com'
  * @Date: 2025-03-13 14:59:11
- * @LastEditors: 'lin' '11252700+display23@user.noreply.gitee.com'
- * @LastEditTime: 2025-03-15 13:59:29
+ * @LastEditors: 'daddasd' '3323169544@qq.com'
+ * @LastEditTime: 2025-03-16 19:33:05
  * @FilePath: \EN_LOOK\src\freertos.cpp
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -215,7 +215,7 @@ void ALL_CreateTasks(void)
 {
     xServoUnlockSemaphore = xSemaphoreCreateBinary();
     xSemaphoreTake(xServoUnlockSemaphore, 0); // 默认情况下，信号量被锁定
-    xTaskCreate(RC522_Authentication_Task, "RC522_Authentication", 2048, NULL, 1, NULL);
+    xTaskCreate(RC522_Authentication_Task, "RC522_Authentication", 2048, NULL, 2, NULL);
     xTaskCreate(ServoControlTask, "Unlock", 1024, NULL, 1, NULL);
     xTaskCreate(Serial_Screen_Task, "Serial_Screen", 2048, NULL, 1, NULL);
     xTaskCreate(MQTT_UnLOCK_Task, "MQTT_Unlock", 8192, NULL, 1, NULL);
