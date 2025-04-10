@@ -2,7 +2,7 @@
  * @Author: 'lin' '11252700+display23@user.noreply.gitee.com'
  * @Date: 2025-03-13 14:59:11
  * @LastEditors: 'daddasd' '3323169544@qq.com'
- * @LastEditTime: 2025-03-16 19:33:05
+ * @LastEditTime: 2025-04-10 19:50:54
  * @FilePath: \EN_LOOK\src\freertos.cpp
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -13,10 +13,12 @@ SemaphoreHandle_t xServoUnlockSemaphore = NULL; // 创建一个二进制信号�
 void All_Init(void)
 {
     RC522_Init();
+    Linked_Network();
     delay(1000);
     Finger_Init();
     delay(1000);
     MQTT_init();
+    Screen_Init();
 }
 
 /**
@@ -29,7 +31,10 @@ void RC522_Authentication_Task(void *param)
     while (true)
     {
         if (RC522_Load_ID(RC522_Read()))
+        {
+            sendCommandToDisplay("page attestationYES");
             xSemaphoreGive(xServoUnlockSemaphore); // 解锁成功释放信号量
+        }
         else
         {
             // Serial.println("RC522 认证失败...");
@@ -58,6 +63,7 @@ void RC522_Register_Task(void *param)
         if (RC522_Save_ID()) // 注意：确保这里是函数调用，即 RC522_Save_ID()
         {
             Serial.println("注册成功！");
+            sendCommandToDisplay("page registerYES");
             registrationSuccess = true;
             break; // 注册成功，退出循环
         }
@@ -74,6 +80,7 @@ void RC522_Register_Task(void *param)
     }
     else
     {
+        sendCommandToDisplay("page registerNO");
         Serial.println("注册任务超时，未成功注册。");
     }
     vTaskPrioritySet(NULL, originalPriority);
@@ -96,6 +103,7 @@ void Finger_Authentication_Task(void *param)
         if (Finger_Authentication())
         {
             Serial.println("指纹认证成功");
+            sendCommandToDisplay("page attestationYES");
             AuthenticationSuccess = true;
             break;
         }
@@ -112,6 +120,7 @@ void Finger_Authentication_Task(void *param)
     }
     else
     {
+        sendCommandToDisplay("page attestationNO");
         Serial.println("指纹认证任务超时。");
     }
     vTaskPrioritySet(NULL, originalPriority);
@@ -134,6 +143,7 @@ void Finger_Enroll_Task(void *param)
         if (Finger_Enroll())
         {
             Serial.println("指纹注册成功");
+            sendCommandToDisplay("page registerYES");
             EnrollSuccess = true;
             break;
         }
@@ -150,6 +160,7 @@ void Finger_Enroll_Task(void *param)
     }
     else
     {
+        sendCommandToDisplay("page registerNO");
         Serial.println("指纹注册任务超时。");
     }
     vTaskPrioritySet(NULL, originalPriority);
@@ -163,6 +174,7 @@ void MQTT_UnLOCK_Task(void *param)
         if (Unlock == 1)
         {
             xSemaphoreGive(xServoUnlockSemaphore);
+            sendCommandToDisplay("page attestationNO");
             Unlock = 0;
         }
         vTaskDelay(pdMS_TO_TICKS(500));
@@ -183,11 +195,20 @@ void ServoControlTask(void *pvParameters)
     }
 }
 
+void Serial_Time_Task(void *param)
+{
+    while(true)
+    {
+        sendTimeToDisplay();
+        vTaskDelay(pdMS_TO_TICKS(1000)); // 每100ms检查一次串口
+    }
+}
+
 void Serial_Screen_Task(void *param)
 {
     while (true)
     {
-        if (Serial.available() > 0)
+        if (ScreenSerial.available() > 0)
         {
             int command = Serial.parseInt();
             switch (command)
@@ -205,11 +226,15 @@ void Serial_Screen_Task(void *param)
                 Serial.println("收到注册Finger认证，启动认证任务...");
                 xTaskCreate(Finger_Authentication_Task, "Finger_Authentication", 2048, NULL, 1, NULL);
                 break;
+            case 33: // 密码解锁成功
+                xSemaphoreGive(xServoUnlockSemaphore);
+                break;
             }
         }
         vTaskDelay(pdMS_TO_TICKS(200)); // 每100ms检查一次串口
     }
 }
+
 
 void ALL_CreateTasks(void)
 {
@@ -219,6 +244,7 @@ void ALL_CreateTasks(void)
     xTaskCreate(ServoControlTask, "Unlock", 1024, NULL, 1, NULL);
     xTaskCreate(Serial_Screen_Task, "Serial_Screen", 2048, NULL, 1, NULL);
     xTaskCreate(MQTT_UnLOCK_Task, "MQTT_Unlock", 8192, NULL, 1, NULL);
+    xTaskCreate(Serial_Time_Task, " Serial_Time_Task", 4065, NULL, 1, NULL);
     //   xTaskCreate(Finger_Authentication_Task, "Finger_Authentication", 2048, NULL, 1, NULL);
     //   xTaskCreate(Finger_Enroll_Task, "Finger_Enroll", 2048, NULL, 1, NULL);
 }

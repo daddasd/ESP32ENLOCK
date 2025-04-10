@@ -1,0 +1,7 @@
+{
+  "name": "SCREEN",
+  "description": "SCREEN驱动库",
+  "keywords": "SCREEN,UART",
+  "frameworks": "arduino",
+  "platforms": ["espressif32"]
+}

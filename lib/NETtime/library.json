@@ -1,0 +1,7 @@
+{
+  "name": "NETtime",
+  "description": "NETtime驱动库",
+  "keywords": "time,WIFI",
+  "frameworks": "arduino",
+  "platforms": ["espressif32"]
+}
