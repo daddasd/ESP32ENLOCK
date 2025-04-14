@@ -13,5 +13,5 @@ void MQTT_sendMessage(const char *message);
 void callback(char *topic, byte *payload, unsigned int length);
 void processData(const char *data);
 void MQTT_receiveMessage();
-
+void MQTT_sendMessage_Int(int number);
 #endif

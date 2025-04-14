@@ -2,14 +2,14 @@
  * @Author: 'daddasd' '3323169544@qq.com'
  * @Date: 2025-03-18 20:36:07
  * @LastEditors: 'daddasd' '3323169544@qq.com'
- * @LastEditTime: 2025-03-18 20:37:17
+ * @LastEditTime: 2025-04-11 14:11:51
  * @FilePath: \EN_LOOK\lib\NETtime\NETtime.cpp
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
 #include "NetTime.h"
 
-const char *ssid = "XZZ";
-const char *password = "qwer1234qwer";
+const char *ssid = "jsj";
+const char *password = "1a2b3c4567";
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "203.107.6.88", 8 * 3600, 60000);

@@ -1,8 +1,8 @@
 #include "MQTT.h"
 
 // WIFI配置
-#define WIFISSID "XZZ"         // WIFI名称
-#define WIFIPSW "qwer1234qwer" // WIFI密码
+#define WIFISSID "jsj"         // WIFI名称
+#define WIFIPSW "1a2b3c4567"   // WIFI密码
 
 // MQTT服务器设置
 #define MQTT_SERVER "bemfa.com"                    // MQTT服务器
@@ -66,7 +66,13 @@ void MQTT_sendMessage(const char *message)
     Serial.print("Published message: ");
     Serial.println(message);
 }
-
+void MQTT_sendMessage_Int(int number)
+{
+    char buffer[20];
+    snprintf(buffer, sizeof(buffer), "%d", number);
+    client.publish(MQTT_TOPIC, buffer);
+    Serial.printf("Published number: %d\n", number);
+}
 // 接收到消息时的回调函数
 void callback(char *topic, byte *payload, unsigned int length)
 {
