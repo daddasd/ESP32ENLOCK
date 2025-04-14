@@ -2,15 +2,16 @@
  * @Author: 'lin' '11252700+display23@user.noreply.gitee.com'
  * @Date: 2025-03-13 14:59:11
  * @LastEditors: 'daddasd' '3323169544@qq.com'
- * @LastEditTime: 2025-04-14 14:49:06
+ * @LastEditTime: 2025-04-14 17:21:18
  * @FilePath: \EN_LOOK\src\freertos.cpp
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
 #include "freertos.h"
 
 TaskHandle_t xSerialScreenTaskHandle = NULL;
+TaskHandle_t xRC522RegisteTaskHandle = NULL;
+TaskHandle_t xRC522AuthenticationTaskHandle = NULL;
 SemaphoreHandle_t xServoUnlockSemaphore = NULL;           // 创建一个二进制信号号量用于解锁
-SemaphoreHandle_t xRC522_RegisterSemaphore = NULL;        // 创建一个二进制信号号量用于RCC_522注册
 SemaphoreHandle_t xFinger_AuthenticationSemaphore = NULL; // 创建一个二进制信号号量用于指纹认证
 SemaphoreHandle_t xFinger_EnrollSemaphore = NULL;         // 创建一个二进制信号号量用于指纹注册
 Servo myServo;                                            // 创建舵机对象
@@ -64,48 +65,33 @@ void RC522_Authentication_Task(void *param)
  */
 void RC522_Register_Task(void *param)
 {
-    UBaseType_t originalPriority = uxTaskPriorityGet(xTaskGetCurrentTaskHandle());
-    vTaskPrioritySet(NULL, 5);
-    const uint32_t registrationWindow = 6000; // 注册窗口，单位毫秒（这里为10秒）
+    static uint16_t time = 50; // 10秒
     while (true)
     {
-        if (xSemaphoreTake(xRC522_RegisterSemaphore, portMAX_DELAY) == pdTRUE)
+        vTaskSuspend(xSerialScreenTaskHandle); // 挂起串口屏任务
+        vTaskSuspend(xRC522AuthenticationTaskHandle);//挂起RC522认证任务
+        while (time--)
         {
-            vTaskSuspend(xSerialScreenTaskHandle); // 挂起串口屏任务
-            uint32_t startTime = millis();
-            bool registrationSuccess = false;
-            // 在注册窗口内不断尝试注册
-            while (millis() - startTime < registrationWindow)
+            if (RC522_Save_ID()) // 注册成功
             {
-                // 尝试注册卡号
-                if (RC522_Save_ID()) // 注意：确保这里是函数调用，即 RC522_Save_ID()
-                {
-                    Serial.println("注册成功！");
-                    sendCommandToDisplay("page registerYES");
-                    registrationSuccess = true;
-                    break;
-                }
-                else
-                {
-                    Serial.println("等待卡片进行注册...");
-                }
-                vTaskDelay(pdMS_TO_TICKS(500)); // 每500ms尝试一次，避免过于频繁
-            }
-            // 根据注册结果释放信号量触发舵机解锁
-            if (registrationSuccess)
-            {
+                Serial.printf("RCC注册成功");
+                sendCommandToDisplay("page registerYES");
                 xSemaphoreGive(xServoUnlockSemaphore);
-                vTaskResume(xSerialScreenTaskHandle); // 恢复串口屏任务
+                vTaskResume(xSerialScreenTaskHandle);  // 恢复串口屏任务
+                vTaskResume(xRC522AuthenticationTaskHandle);
+                vTaskSuspend(xRC522RegisteTaskHandle); // 挂起自己
+                break;
             }
             else
             {
-                sendCommandToDisplay("page registerNO");
-                vTaskResume(xSerialScreenTaskHandle); // 恢复串口屏任务
-                Serial.println("注册任务超时，未成功注册。");
+                Serial.printf("请重试");
             }
-            vTaskPrioritySet(NULL, originalPriority);
+            vTaskDelay(pdMS_TO_TICKS(200));
         }
-        vTaskDelay(100 / portTICK_PERIOD_MS); // 延时200ms，防止占用过多CPU
+        time = 50;
+        vTaskResume(xSerialScreenTaskHandle);  // 恢复串口屏任务
+        vTaskResume(xRC522AuthenticationTaskHandle);
+        vTaskSuspend(xRC522RegisteTaskHandle); // 挂起自己
     }
 }
 /**
@@ -272,7 +258,7 @@ void Serial_Screen_Task(void *param)
             else if (memcmp(RX_Data, "\x05", 1) == 0)
             { // 注意 == 0
                 Serial.println("收到注册RC522指令,启动注册任务...");
-                xSemaphoreGive(xRC522_RegisterSemaphore);
+                vTaskResume(xRC522RegisteTaskHandle); // 恢复注册任务
             }
             else if (memcmp(RX_Data, "\x03", 1) == 0)
             { // 注意 == 0
@@ -300,7 +286,6 @@ void ResetTask(void *pvParameters)
         // 执行复位前的清理工作
         printf("System will reset now!\n");
         fflush(stdout);
-
         // 执行复位
         esp_restart(); // ESP32
                        // vTaskEndScheduler(); // 其他FreeRTOS系统
@@ -309,20 +294,19 @@ void ResetTask(void *pvParameters)
 void ALL_CreateTasks(void)
 {
     xServoUnlockSemaphore = xSemaphoreCreateBinary();           // 解锁信号量
-    xRC522_RegisterSemaphore = xSemaphoreCreateBinary();        // RC522注册信号量
     xFinger_AuthenticationSemaphore = xSemaphoreCreateBinary(); // Finger认证信号量
     xFinger_EnrollSemaphore = xSemaphoreCreateBinary();         // Finger注册信号量
     xSemaphoreTake(xServoUnlockSemaphore, 0);                   // 默认情况下，信号量被锁定
-    xSemaphoreTake(xRC522_RegisterSemaphore, 0);                // 默认情况下，信号量被锁定
     xSemaphoreTake(xFinger_AuthenticationSemaphore, 0);         // 默认情况下，信号量被锁定
     xSemaphoreTake(xFinger_EnrollSemaphore, 0);                 // 默认情况下，信号量被锁定
-    xTaskCreate(RC522_Authentication_Task, "RC522_Authentication", 2048, NULL, 2, NULL);
+    xTaskCreate(RC522_Authentication_Task, "RC522_Authentication", 2048, NULL, 2,&xRC522AuthenticationTaskHandle);
+    xTaskCreate(RC522_Register_Task, "RC522_Register", 16384, NULL, 1, &xRC522RegisteTaskHandle);
     xTaskCreate(ServoControlTask, "Unlock", 1024, NULL, 1, NULL);
     xTaskCreate(Serial_Screen_Task, "Serial_Screen", 2048, NULL, 1, &xSerialScreenTaskHandle);
     xTaskCreate(MQTT_UnLOCK_Task, "MQTT_Unlock", 8192, NULL, 1, NULL);
     xTaskCreate(Serial_Time_Task, " Serial_Time_Task", 4065, NULL, 1, NULL);
-    xTaskCreate(RC522_Register_Task, "RC522_Register", 16384, NULL, 1, NULL);
     xTaskCreate(Finger_Authentication_Task, "Finger_Authentication", 2048, NULL, 1, NULL);
     xTaskCreate(Finger_Enroll_Task, "Finger_Enroll", 2048, NULL, 1, NULL);
     xTaskCreate(ResetTask, "Reset", 2048, NULL, 1, NULL);
+    vTaskSuspend(xRC522RegisteTaskHandle); // 初始化挂起任务
 }
