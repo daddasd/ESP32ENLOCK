@@ -1,8 +1,8 @@
 #include "MQTT.h"
 
 // WIFI配置
-#define WIFISSID "jsj"         // WIFI名称
-#define WIFIPSW "1a2b3c4567"   // WIFI密码
+#define WIFISSID "EN_ROOM"         // WIFI名称
+#define WIFIPSW "qianrushi1409"   // WIFI密码
 
 // MQTT服务器设置
 #define MQTT_SERVER "bemfa.com"                    // MQTT服务器
@@ -21,39 +21,75 @@ int Unlock = 0;
 /*
  * MQTT初始化函数：连接WIFI、设置MQTT服务器和回调函数，并完成MQTT连接和订阅
  */
+/*
+ * MQTT初始化函数（增加20秒超时）
+ */
 void MQTT_init()
 {
     Serial.begin(115200);
+
     // 连接WIFI
     WiFi.begin(WIFISSID, WIFIPSW);
+    unsigned long wifiStartTime = millis();
     while (WiFi.status() != WL_CONNECTED)
     {
-        Serial.println("Connecting to WiFi...");
+        if (millis() - wifiStartTime > 20000)
+        { // WiFi连接也设置20秒超时
+            Serial.println("WiFi连接超时！");
+            return; // 直接退出函数
+        }
+        Serial.println("正在连接WiFi...");
         delay(500);
     }
-    Serial.print("Connected to WiFi. IP Address: ");
+    Serial.print("WiFi连接成功。IP地址: ");
     Serial.println(WiFi.localIP());
 
-    // 配置MQTT服务器及回调函数
+    // 配置MQTT服务器及回调
     client.setServer(MQTT_SERVER, MQTT_SERVER_PORT);
     client.setCallback(callback);
 
-    // 建立MQTT连接
+    // 尝试连接MQTT（含20秒超时）
+    unsigned long mqttStartTime = millis();
+    bool mqttConnected = false;
+
     while (!client.connected())
     {
-        Serial.println("Connecting to MQTT...");
+        // 检查是否超时
+        if (millis() - mqttStartTime > 20000)
+        {
+            Serial.println("MQTT连接超时（20秒）！");
+            break;
+        }
+
+        Serial.println("正在连接MQTT...");
         if (client.connect(MQTT_ID))
         {
-            Serial.println("Connected to MQTT.");
+            Serial.println("MQTT连接成功。");
             client.subscribe(MQTT_TOPIC);
+            mqttConnected = true;
+            break;
         }
         else
         {
-            Serial.print("Failed, rc=");
+            Serial.print("连接失败，错误码: ");
             Serial.print(client.state());
-            Serial.println(". Retrying in 5 seconds...");
-            delay(5000);
+
+            // 动态计算剩余等待时间（不超过5秒）
+            unsigned long elapsed = millis() - mqttStartTime;
+            unsigned long remaining = 20000 - elapsed;
+            if (remaining <= 0)
+                break; // 已超时
+
+            unsigned long retryDelay = (remaining < 5000) ? remaining : 5000;
+            Serial.printf("，%lu秒后重试...\n", retryDelay / 1000);
+            delay(retryDelay); // 按需等待
         }
+    }
+
+    // 最终状态检查
+    if (!mqttConnected)
+    {
+        Serial.println("MQTT初始化失败，请检查网络或配置！");
     }
 }
 

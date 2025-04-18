@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "freertos_demo.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
+}

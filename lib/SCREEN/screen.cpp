@@ -2,7 +2,7 @@
  * @Author: 'daddasd' '3323169544@qq.com'
  * @Date: 2025-04-09 21:27:47
  * @LastEditors: 'daddasd' '3323169544@qq.com'
- * @LastEditTime: 2025-04-14 11:05:21
+ * @LastEditTime: 2025-04-18 11:01:50
  * @FilePath: \EN_LOOK\lib\SCREEN\screen.cpp
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -55,4 +55,3 @@ void sendCommandToDisplay(const char *command)
     // Serial.print(command);
     // Serial.println(" + 0xFF*3");
 }
-

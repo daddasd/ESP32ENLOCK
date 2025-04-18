@@ -8,8 +8,8 @@
  */
 #include "NetTime.h"
 
-const char *ssid = "jsj";
-const char *password = "1a2b3c4567";
+const char *ssid = "EN_ROOM";
+const char *password = "qianrushi1409";
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "203.107.6.88", 8 * 3600, 60000);

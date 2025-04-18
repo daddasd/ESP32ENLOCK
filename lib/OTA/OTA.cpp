@@ -2,13 +2,13 @@
  * @Author: 'daddasd' '3323169544@qq.com'
  * @Date: 2025-04-10 21:16:52
  * @LastEditors: 'daddasd' '3323169544@qq.com'
- * @LastEditTime: 2025-04-14 13:55:34
+ * @LastEditTime: 2025-04-14 21:00:29
  * @FilePath: \EN_LOOK\lib\OTA\OTA.cpp
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
 #include "OTA.h"
 
-#define CUSTOM_VERSION "v2.5.1"
+#define CUSTOM_VERSION "v3.0.1"
 
 String upUrl = "http://bin.bemfa.com/b/1BcY2IwNDJlZGE1MWY4NGU4MDliYWJhZDBiMDAzODc2NWY=ENLOOK002.bin"; // 更新的地址
 
